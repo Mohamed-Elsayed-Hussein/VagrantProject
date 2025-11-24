@@ -18,6 +18,17 @@ sudo yum install nginx -y
 echo "Configuring Nginx..."
 sudo sed -i 's/server_name[[:space:]]\+_;/server_name server1;/' /etc/nginx/nginx.conf
 
+
+sudo mkdir -p /etc/nginx/ssl 
+sudo cd /etc/nginx/ssl
+if [ -f  key.pem ] && [ -f cert.pem ];then
+    echo "SSL certificate and key already exist. Skipping generation."
+else
+    openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem \
+        -sha256 -days 3650 -nodes \
+        -subj "/C=EG/ST=Cairo/L=Cairo/O=GoApplicatio/OU=ITservice/CN=www.goapplication.com"
+fi
+
 sudo tee /etc/nginx/conf.d/server.conf  << EOF
 upstream vproapp {
 server app01:8080;
@@ -25,8 +36,26 @@ server app01:8080;
 server {
  listen 80;
  location / {
-  proxy_pass http://vproapp;
+     return 301 https://$host$request_uri;
  }
+}
+server {
+        listen 443 ssl;
+        
+        ssl_certificate     /etc/nginx/ssl/cert.pem;
+        ssl_certificate_key /etc/nginx/ssl/key.pem;
+        ssl_protocols       TLSv1.2 TLSv1.3;
+        ssl_ciphers         HIGH:!aNULL:!MD5;
+        ssl_prefer_server_ciphers on;
+
+        location / {
+            proxy_pass http://vproapp;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
 }
 EOF
 
