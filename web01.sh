@@ -33,33 +33,33 @@ sudo cp cert.pem /etc/nginx/ssl/cert.pem
 sudo cp key.pem /etc/nginx/ssl/key.pem
 sudo chown nginx:nginx /etc/nginx/ssl/cert.pem
 sudo chown nginx:nginx /etc/nginx/ssl/key.pem
-sudo tee /etc/nginx/conf.d/server.conf  << EOF
+
+sudo tee /etc/nginx/conf.d/server.conf <<'EOF'
 upstream vproapp {
-server app01:8080;
+    server app01:8080;
 }
 server {
- listen 80;
- location / {
-     return 301 https://$host$request_uri;
- }
+    listen 80;
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
 server {
-        listen 443 ssl;
-        
-        ssl_certificate     /etc/nginx/ssl/cert.pem;
-        ssl_certificate_key /etc/nginx/ssl/key.pem;
-        ssl_protocols       TLSv1.2 TLSv1.3;
-        ssl_ciphers         HIGH:!aNULL:!MD5;
-        ssl_prefer_server_ciphers on;
+    listen 443 ssl;
 
-        location / {
-            proxy_pass http://vproapp;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
+    ssl_certificate     /etc/nginx/ssl/cert.pem;
+    ssl_certificate_key /etc/nginx/ssl/key.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
 
+    location / {
+        proxy_pass http://vproapp;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 EOF
 sudo chown nginx:nginx  /etc/nginx/conf.d/server.conf 
