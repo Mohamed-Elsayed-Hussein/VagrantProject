@@ -20,7 +20,7 @@ sudo sed -i 's/server_name[[:space:]]\+_;/server_name server1;/' /etc/nginx/ngin
 
 
 sudo mkdir -p /etc/nginx/ssl 
-sudo cd /etc/nginx/ssl
+
 if [ -f  key.pem ] && [ -f cert.pem ];then
     echo "SSL certificate and key already exist. Skipping generation."
 else
@@ -29,6 +29,10 @@ else
         -subj "/C=EG/ST=Cairo/L=Cairo/O=GoApplicatio/OU=ITservice/CN=www.goapplication.com"
 fi
 
+sudo cp cert.pem /etc/nginx/ssl/cert.pem
+sudo cp key.pem /etc/nginx/ssl/key.pem
+sudo chown nginx:nginx /etc/nginx/ssl/cert.pem
+sudo chown nginx:nginx /etc/nginx/ssl/key.pem
 sudo tee /etc/nginx/conf.d/server.conf  << EOF
 upstream vproapp {
 server app01:8080;
@@ -58,6 +62,7 @@ server {
 
 }
 EOF
+sudo chown nginx:nginx  /etc/nginx/conf.d/server.conf 
 
 sudo systemctl restart nginx
 sudo systemctl enable nginx
